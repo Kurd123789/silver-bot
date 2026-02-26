@@ -1,0 +1,57 @@
+import os
+import requests
+from telegram import Bot
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+GOLD_API = os.getenv("GOLD_API")
+
+CHANNEL_USERNAME = "@xkalola"   # 🔴 ئەگەر ناوی کەناڵەکەت جیاوازە بگۆڕە
+
+bot = Bot(token=BOT_TOKEN)
+
+def get_silver_price():
+    url = "https://www.goldapi.io/api/XAG/USD"
+    headers = {
+        "x-access-token": GOLD_API,
+        "Content-Type": "application/json"
+    }
+
+    response = requests.get(url, headers=headers)
+    data = response.json()
+
+    price_ounce = float(data["price"])
+    price_per_kg = price_ounce * 32.1507
+
+    change = float(data["ch"])
+    percent = float(data["chp"])
+
+    return price_ounce, price_per_kg, change, percent
+
+
+def format_message(price_ounce, price_per_kg, change, percent):
+
+    if change > 0:
+        arrow = "🔺"
+    elif change < 0:
+        arrow = "🔻"
+    else:
+        arrow = "⏺"
+
+    message = (
+        f"📊 Silver Price Update (Live)\n\n"
+        f"💰 Ounce: ${price_ounce:.2f}\n"
+        f"🏋️ Kg: ${price_per_kg:.2f}\n\n"
+        f"{arrow} Change: {change:.2f} ({percent:.2f}%)"
+    )
+
+    return message
+
+
+def send_update():
+    ounce, kg, change, percent = get_silver_price()
+    message = format_message(ounce, kg, change, percent)
+    bot.send_message(chat_id=CHANNEL_USERNAME, text=message)
+
+
+if __name__ == "__main__":
+    send_update()
